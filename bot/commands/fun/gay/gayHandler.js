@@ -1,9 +1,8 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-// NOTE: this points to the project root, not the module folder
+// project-root/data/gay
 const projectRoot = path.resolve(__dirname, "../../..");
-
 const dataDir = path.join(projectRoot, "data", "gay");
 const filePath = path.join(dataDir, "gayCache.json");
 

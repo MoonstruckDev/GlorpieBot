@@ -2,7 +2,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 // project-root/data/bitchass
-const dataDir = path.join(process.cwd(), "data", "bitchass");
+const projectRoot = path.resolve(__dirname, "../../..");
+const dataDir = path.join(projectRoot, "data", "bitchass");
 const filePath = path.join(dataDir, "bitchassCache.json");
 
 let cache = {};

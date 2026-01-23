@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require("discord.js");
 const GayCache = require("../gay/gayHandler.js");
 const { updateLeaderboard } = require("../gay/gayLeaderboard.js");
+const { isSelf } = require("../../../utils/user.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -34,12 +35,7 @@ module.exports = {
     const target = interaction.options.getUser("user");
     const guildId = interaction.guildId;
 
-    if (interaction.user.id === target.id)
-      return interaction.reply({
-        content: "You cannot add to yourself",
-        ephemeral: true,
-      });
-
+    if (isSelf(interaction, interaction.user.id, target.id)) return;
     if (subcommand === "add") {
       const count = GayCache.increment(target.id, guildId);
 
