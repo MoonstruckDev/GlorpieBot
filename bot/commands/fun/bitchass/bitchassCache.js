@@ -1,13 +1,17 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-const filePath = path.join(__dirname, "data", "bitchassCache.json");
+// Go up to project root (same trick as before)
+const projectRoot = path.resolve(__dirname, "../../..");
+
+const dataDir = path.join(projectRoot, "data", "bitchass");
+const filePath = path.join(dataDir, "bitchassCache.json");
 
 let cache = {};
 
 function load() {
-  if (!fs.existsSync(path.join(__dirname, "data"))) {
-    fs.mkdirSync(path.join(__dirname, "data"));
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
   }
 
   if (fs.existsSync(filePath)) {

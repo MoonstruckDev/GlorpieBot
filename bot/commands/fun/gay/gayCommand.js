@@ -1,7 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
-const GayCache = require("../../utils/gayData/gayHandler.js");
-const { updateLeaderboard } = require("../../utils/gayData/gayLeaderboard.js");
-const { leaderboardChannelId } = require("../../config.json");
+const GayCache = require("../gay/gayHandler.js");
+const { updateLeaderboard } = require("../gay/gayLeaderboard.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -33,6 +32,7 @@ module.exports = {
   async execute(interaction) {
     const subcommand = interaction.options.getSubcommand();
     const target = interaction.options.getUser("user");
+    const guildId = interaction.guildId;
 
     if (interaction.user.id === target.id)
       return interaction.reply({
@@ -41,19 +41,17 @@ module.exports = {
       });
 
     if (subcommand === "add") {
-      const count = GayCache.increment(target.id);
+      const count = GayCache.increment(target.id, guildId);
 
       await interaction.reply(
         `${target} has been gay **${count}** time${count === 1 ? "" : "s"} 🏳️‍🌈`,
       );
 
-      if (interaction.inGuild()) {
-        await updateLeaderboard(interaction.client, leaderboardChannelId);
-      }
+      await updateLeaderboard(interaction.client, guildId);
     }
 
     if (subcommand === "get") {
-      const count = GayCache.get(target.id);
+      const count = GayCache.get(target.id, guildId);
 
       await interaction.reply(
         `${target} has been gay **${count}** time${count === 1 ? "" : "s"} 🏳️‍🌈`,

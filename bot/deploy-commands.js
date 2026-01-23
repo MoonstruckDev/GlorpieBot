@@ -1,47 +1,35 @@
-const { REST, Routes } = require("discord.js");
-const { clientId, guildId, token } = require("./config.json");
 const fs = require("node:fs");
 const path = require("node:path");
+const { REST, Routes } = require("discord.js");
+const { clientId, guildId, token } = require("./config.json");
 
 const commands = [];
-const foldersPath = path.join(__dirname, "commands");
-const commandFolders = fs.readdirSync(foldersPath);
 
-for (const folder of commandFolders) {
-  const commandsPath = path.join(foldersPath, folder);
-  const commandFiles = fs
-    .readdirSync(commandsPath)
-    .filter((file) => file.endsWith(".js"));
+function scan(dir) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name);
 
-  for (const file of commandFiles) {
-    const filePath = path.join(commandsPath, file);
-    const commandExports = require(filePath);
+    if (entry.isDirectory()) scan(fullPath);
+    else if (entry.name.endsWith(".js")) {
+      const command = require(fullPath);
+      const list = Array.isArray(command) ? command : [command];
 
-    const commandList = Array.isArray(commandExports)
-      ? commandExports
-      : [commandExports];
-
-    for (const command of commandList) {
-      if ("data" in command && "execute" in command) {
-        commands.push(command.data.toJSON());
+      for (const cmd of list) {
+        if (cmd.data && cmd.execute) commands.push(cmd.data.toJSON());
       }
     }
   }
 }
 
-const rest = new REST({ version: "10" }).setToken(token);
+scan(path.join(__dirname, "commands"));
 
-(async () => {
-  try {
-    const data = await rest.put(Routes.applicationCommands(clientId), {
-      body: commands,
-    });
-
+new REST({ version: "10" })
+  .setToken(token)
+  .put(Routes.applicationGuildCommands(clientId, guildId), { body: commands })
+  .then((data) =>
     console.log(
-      "Global commands deployed:",
+      "Deployed:",
       data.map((c) => c.name),
-    );
-  } catch (error) {
-    console.error("Failed to deploy global commands:", error);
-  }
-})();
+    ),
+  )
+  .catch(console.error);

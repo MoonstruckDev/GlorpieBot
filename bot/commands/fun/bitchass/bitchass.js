@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require("discord.js");
-const BitchassCache = require("../../utils/bitchassData/bitchassCache.js");
+const BitchassCache = require("../bitchass/bitchassCache");
 
 module.exports = {
   data: new SlashCommandBuilder()

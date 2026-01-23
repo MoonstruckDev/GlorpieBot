@@ -1,127 +1,58 @@
+const fs = require("node:fs");
+const path = require("node:path");
 const {
   Client,
   Collection,
   Events,
   GatewayIntentBits,
   MessageFlags,
-  REST,
-  Routes,
 } = require("discord.js");
 
-const {
-  token,
-  clientId,
-  guildId,
-  leaderboardChannelId,
-} = require("./config.json");
+const { token, leaderboardChannelId } = require("./config.json");
 
-const fs = require("node:fs");
-const path = require("node:path");
-
-const BitchassCache = require("./utils/bitchassData/bitchassCache.js");
-const GayCache = require("./utils/gayData/gayHandler.js");
-
+const GayCache = require("./commands/fun/gay/gayHandler.js");
+const BitchassCache = require("./commands/fun/bitchass/bitchassCache.js");
 const {
   ensureLeaderboardExists,
-} = require("./utils/gayData/gayLeaderboard.js");
-
-const { getWordOfTheDay } = require("./utils/wotd/getWord.js");
+} = require("./commands/fun/gay/gayLeaderboard.js");
+const { getWordOfTheDay } = require("./startup/wotd/getWord.js");
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.DirectMessages,
   ],
-  partials: ["CHANNEL"],
-});
-
-// ------------------
-// On Ready
-// ------------------
-client.once(Events.ClientReady, async (readyClient) => {
-  console.log(`Ready! Logged in as ${readyClient.user.tag}`);
-
-  await ensureLeaderboardExists(readyClient, leaderboardChannelId);
-
-  const wotd = await getWordOfTheDay();
-  readyClient.user.setPresence({
-    activities: [{ name: `Word of the day: ${wotd.word}` }],
-  });
 });
 
 client.commands = new Collection();
 
-async function deployCommands() {
-  const commands = [];
-  const foldersPath = path.join(__dirname, "commands");
-  const commandFolders = fs.readdirSync(foldersPath);
+function scanCommands(dir) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name);
 
-  for (const folderOrFile of commandFolders) {
-    const fullPath = path.join(foldersPath, folderOrFile);
-    const stats = fs.statSync(fullPath);
+    if (entry.isDirectory()) scanCommands(fullPath);
+    else if (entry.name.endsWith(".js")) {
+      const command = require(fullPath);
+      const list = Array.isArray(command) ? command : [command];
 
-    if (stats.isDirectory()) {
-      const commandFiles = fs
-        .readdirSync(fullPath)
-        .filter((file) => file.endsWith(".js"));
-
-      for (const file of commandFiles) {
-        const filePath = path.join(fullPath, file);
-        const exports = require(filePath);
-        const list = Array.isArray(exports) ? exports : [exports];
-
-        for (const command of list) {
-          if ("data" in command && "execute" in command) {
-            commands.push(command.data.toJSON());
-          }
-        }
+      for (const cmd of list) {
+        if (cmd.data && cmd.execute) client.commands.set(cmd.data.name, cmd);
       }
     }
   }
+}
 
-  const rest = new REST({ version: "10" }).setToken(token);
-  await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
-    body: commands,
+client.once(Events.ClientReady, async (client) => {
+  console.log(`Logged in as ${client.user.tag}`);
+  await ensureLeaderboardExists(client, leaderboardChannelId);
+
+  const wotd = await getWordOfTheDay();
+  client.user.setPresence({
+    activities: [{ name: `Word of the day: ${wotd.word}` }],
   });
+});
 
-  console.log(`Deployed ${commands.length} guild commands.`);
-}
-
-// ------------------
-// Load commands
-// ------------------
-function loadCommands() {
-  const foldersPath = path.join(__dirname, "commands");
-  const commandFolders = fs.readdirSync(foldersPath);
-
-  for (const folder of commandFolders) {
-    const folderPath = path.join(foldersPath, folder);
-
-    if (!fs.statSync(folderPath).isDirectory()) continue;
-
-    const commandFiles = fs
-      .readdirSync(folderPath)
-      .filter((file) => file.endsWith(".js"));
-
-    for (const file of commandFiles) {
-      const filePath = path.join(folderPath, file);
-      const exports = require(filePath);
-      const list = Array.isArray(exports) ? exports : [exports];
-
-      for (const command of list) {
-        if ("data" in command && "execute" in command) {
-          client.commands.set(command.data.name, command);
-        }
-      }
-    }
-  }
-}
-
-// ------------------
-// Interaction handling
-// ------------------
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
@@ -132,29 +63,17 @@ client.on(Events.InteractionCreate, async (interaction) => {
     await command.execute(interaction);
   } catch (error) {
     console.error(error);
-
-    const reply = {
-      content: "There was an error while executing this command!",
+    await interaction.reply({
+      content: "There was an error.",
       flags: MessageFlags.Ephemeral,
-    };
-
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp(reply);
-    } else {
-      await interaction.reply(reply);
-    }
+    });
   }
 });
 
-// ------------------
-// Start bot
-// ------------------
 (async () => {
-  BitchassCache.load();
   GayCache.load();
+  BitchassCache.load();
 
-  await deployCommands();
-  loadCommands();
-
+  scanCommands(path.join(__dirname, "commands"));
   client.login(token);
 })();
