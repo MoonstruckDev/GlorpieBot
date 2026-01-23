@@ -2,6 +2,7 @@ const { SlashCommandBuilder } = require("discord.js");
 const GayCache = require("../gay/gayHandler.js");
 const { updateLeaderboard } = require("../gay/gayLeaderboard.js");
 const { isSelf } = require("../../../utils/user.js");
+const { leaderboardChannelId } = require("../../../config.json");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -36,6 +37,7 @@ module.exports = {
     const guildId = interaction.guildId;
 
     if (isSelf(interaction, interaction.user.id, target.id)) return;
+
     if (subcommand === "add") {
       const count = GayCache.increment(target.id, guildId);
 
@@ -43,7 +45,11 @@ module.exports = {
         `${target} has been gay **${count}** time${count === 1 ? "" : "s"} 🏳️‍🌈`,
       );
 
-      await updateLeaderboard(interaction.client, guildId);
+      await updateLeaderboard(
+        interaction.client,
+        guildId,
+        leaderboardChannelId,
+      );
     }
 
     if (subcommand === "get") {

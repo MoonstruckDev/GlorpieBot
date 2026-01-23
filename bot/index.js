@@ -8,13 +8,10 @@ const {
   MessageFlags,
 } = require("discord.js");
 
-const { token, leaderboardChannelId } = require("./config.json");
+const { token } = require("./config.json");
 
 const GayCache = require("./commands/fun/gay/gayHandler.js");
 const BitchassCache = require("./commands/fun/bitchass/bitchassCache.js");
-const {
-  ensureLeaderboardExists,
-} = require("./commands/fun/gay/gayLeaderboard.js");
 const { getWordOfTheDay } = require("./startup/wotd/getWord.js");
 
 const client = new Client({
@@ -45,7 +42,6 @@ function scanCommands(dir) {
 
 client.once(Events.ClientReady, async (client) => {
   console.log(`Logged in as ${client.user.tag}`);
-  await ensureLeaderboardExists(client, leaderboardChannelId);
 
   const wotd = await getWordOfTheDay();
   client.user.setPresence({
