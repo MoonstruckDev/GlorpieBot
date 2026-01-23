@@ -1,10 +1,8 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-// Go up to project root (same trick as before)
-const projectRoot = path.resolve(__dirname, "../../..");
-
-const dataDir = path.join(projectRoot, "data", "bitchass");
+// project-root/data/bitchass
+const dataDir = path.join(process.cwd(), "data", "bitchass");
 const filePath = path.join(dataDir, "bitchassCache.json");
 
 let cache = {};
@@ -14,9 +12,11 @@ function load() {
     fs.mkdirSync(dataDir, { recursive: true });
   }
 
-  if (fs.existsSync(filePath)) {
-    cache = JSON.parse(fs.readFileSync(filePath));
+  if (!fs.existsSync(filePath)) {
+    fs.writeFileSync(filePath, JSON.stringify({}, null, 2));
   }
+
+  cache = JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
 function save() {
@@ -46,4 +46,8 @@ function set(userId, value) {
   save();
 }
 
-module.exports = { load, get, set };
+module.exports = {
+  load,
+  get,
+  set,
+};
