@@ -10,9 +10,8 @@ const {
 
 const { token } = require("./config.json");
 
-const GayCache = require("./commands/fun/gay/gayHandler.js");
-const BitchassCache = require("./commands/fun/bitchass/bitchassCache.js");
 const { getWordOfTheDay } = require("./startup/wotd/getWord.js");
+const glorp = require("./commands/fun/glorpCommand.js");
 
 const client = new Client({
   intents: [
@@ -45,7 +44,7 @@ client.once(Events.ClientReady, async (client) => {
 
   const wotd = await getWordOfTheDay();
   client.user.setPresence({
-    activities: [{ name: `Word of the day: ${wotd.word}` }],
+    activities: [{ name: `Word of the day: ${glorp.toGalactic(wotd.word)}` }],
   });
 });
 
@@ -67,9 +66,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 (async () => {
-  GayCache.load();
-  BitchassCache.load();
-
   scanCommands(path.join(__dirname, "commands"));
   client.login(token);
 })();

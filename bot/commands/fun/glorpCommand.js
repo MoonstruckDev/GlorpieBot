@@ -25,7 +25,7 @@ const GALACTIC = {
   V: "⍊",
   W: "∴",
   X: "̇ ̇/",
-  Y: "||",
+  Y: "|​|",
   Z: "⨅",
 };
 
@@ -66,7 +66,11 @@ module.exports = [
       .setName("glorp")
       .setDescription("Convert normal text to Galactic")
       .addStringOption((opt) =>
-        opt.setName("text").setDescription("Text to convert").setRequired(true),
+        opt
+          .setName("text")
+          .setDescription("Text to convert")
+          .setRequired(true)
+          .setMaxLength(600),
       ),
     async execute(interaction) {
       const text = interaction.options.getString("text");
@@ -92,3 +96,5 @@ module.exports = [
     },
   },
 ];
+
+module.exports.toGalactic = toGalactic;
