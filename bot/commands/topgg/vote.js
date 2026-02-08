@@ -10,7 +10,7 @@ module.exports = {
     const voteUrl = `https://top.gg/bot/${botId}/vote`;
     await interaction.reply({
       content: `Thank you for supporting me! You can vote here: ${voteUrl}`,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   },
 };
