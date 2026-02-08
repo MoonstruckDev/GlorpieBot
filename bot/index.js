@@ -8,7 +8,7 @@ const {
   MessageFlags,
 } = require("discord.js");
 
-const { token } = require("./config.json");
+const { token, topggToken, botId } = require("./config.json");
 
 const { getWordOfTheDay } = require("./startup/wotd/getWord.js");
 const glorp = require("./commands/fun/glorpCommand.js");
@@ -39,14 +39,53 @@ function scanCommands(dir) {
   }
 }
 
-client.once(Events.ClientReady, async (client) => {
+// Updates Top.gg server count
+
+async function updateTopGGStats(guildCount) {
+  try {
+    const res = await fetch(`https://top.gg/api/bots/${botId}/stats`, {
+      method: "POST",
+      headers: {
+        Authorization: topggToken,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ server_count: guildCount }),
+    });
+
+    if (!res.ok) {
+      console.error(
+        `Failed to update Top.gg stats: ${res.status} ${res.statusText}`,
+      );
+    } else {
+      console.log(`Top.gg stats updated: ${guildCount} servers`);
+    }
+  } catch (err) {
+    console.error("Error updating Top.gg stats:", err);
+  }
+}
+
+client.once(Events.ClientReady, async () => {
   console.log(`Logged in as ${client.user.tag}`);
 
   const wotd = await getWordOfTheDay();
   client.user.setPresence({
     activities: [{ name: `Word of the day: ${glorp.toGalactic(wotd.word)}` }],
   });
+
+  // Initial Top.gg update
+  updateTopGGStats(client.guilds.cache.size);
+
+  // Auto-update
+  setInterval(
+    () => {
+      updateTopGGStats(client.guilds.cache.size);
+    },
+    10 * 60 * 1000,
+  );
 });
+
+client.on("guildCreate", () => updateTopGGStats(client.guilds.cache.size));
+client.on("guildDelete", () => updateTopGGStats(client.guilds.cache.size));
 
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
