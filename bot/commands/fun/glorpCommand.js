@@ -64,7 +64,9 @@ module.exports = [
   {
     data: new SlashCommandBuilder()
       .setName("glorp")
-      .setDescription("Convert normal text to Galactic")
+      .setDescription(
+        "Convert normal text to Galactic. Note: non english characters and numbers don't get translated",
+      )
       .addStringOption((opt) =>
         opt
           .setName("text")
