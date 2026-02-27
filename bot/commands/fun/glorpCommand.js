@@ -35,20 +35,36 @@ const NORMAL = Object.fromEntries(
 
 const SYMBOLS = Object.keys(NORMAL).sort((a, b) => b.length - a.length);
 
-const toGalactic = (text) =>
-  text
-    .toUpperCase()
-    .split("")
-    .map((c) => GALACTIC[c] || c)
-    .join("");
+const toGalactic = (text) => {
+  text = text.replace(/<@&(\d+)>/g, "\x00[Role Ping]\x00");
+  text = text.replace(/@everyone/g, "\x00[everyone]\x00");
+  text = text.replace(/@here/g, "\x00[here]\x00");
+  return text.replace(
+    /(\x00[^\x00]+\x00)|(<a?:\w+:\d+>)|([^])/g,
+    (_, placeholder, emote, char) => {
+      if (placeholder) return placeholder.replaceAll("\x00", "");
+      if (emote) return emote;
+      return GALACTIC[char.toUpperCase()] || char;
+    },
+  );
+};
 
 const fromGalactic = (text) => {
+  text = text.replace(/<@&(\d+)>/g, "[role]");
+  text = text.replace(/@everyone/g, "[everyone]");
+  text = text.replace(/@here/g, "[here]");
   let res = "";
   let i = 0;
-
   while (i < text.length) {
+    if (text[i] === "<") {
+      const emoteMatch = text.slice(i).match(/^<a?:\w+:\d+>/);
+      if (emoteMatch) {
+        res += emoteMatch[0];
+        i += emoteMatch[0].length;
+        continue;
+      }
+    }
     const sym = SYMBOLS.find((s) => text.startsWith(s, i));
-
     if (sym) {
       res += NORMAL[sym];
       i += sym.length;
@@ -56,8 +72,7 @@ const fromGalactic = (text) => {
       res += text[i++];
     }
   }
-
-  return res;
+  return res.toLowerCase().replace(/^./, (c) => c.toUpperCase());
 };
 
 module.exports = [
