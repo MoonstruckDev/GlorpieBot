@@ -24,7 +24,7 @@ module.exports = [
     async execute(interaction) {
       const reviewUrl = ` https://top.gg/bot/${botId}}#reviews`;
       await interaction.reply({
-        content: `Thank you for supporting me! You can vote here: ${reviewUrl}`,
+        content: `Thank you for thining of leaving and review and supporting me T-T\nYou can leave a review here: ${reviewUrl}`,
       });
     },
   },
