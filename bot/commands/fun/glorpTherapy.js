@@ -53,13 +53,24 @@ module.exports = [
         let avatarURL;
 
         if (useOriginalProfile) {
-          avatarURL = user.displayAvatarURL({ extension: "png", size: 1024 });
+          avatarURL = user.displayAvatarURL({
+            extension: "png",
+            size: 1024,
+          });
         } else {
-          const member = interaction.member;
+          const member =
+            interaction.guild?.members.cache.get(user.id) ??
+            (await interaction.guild?.members.fetch(user.id).catch(() => null));
 
           avatarURL =
-            member?.displayAvatarURL?.({ extension: "png", size: 1024 }) ??
-            user.displayAvatarURL({ extension: "png", size: 1024 });
+            member?.displayAvatarURL({
+              extension: "png",
+              size: 1024,
+            }) ??
+            user.displayAvatarURL({
+              extension: "png",
+              size: 1024,
+            });
         }
 
         const avatar = await loadImage(avatarURL);
