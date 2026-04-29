@@ -136,19 +136,16 @@ client.once(Events.ClientReady, async () => {
 
   const bootTime = Date.now() - startTime;
 
-  console.log("\n");
-  console.log("===== GLORP BOT =====");
+  console.log("\n===== GLORP BOT =====");
   console.log(`User: ${client.user.tag}`);
   console.log(`Boot: ${bootTime}ms`);
   console.log("===== BOT STATS =====");
   console.log("Servers:", totalServers);
   console.log("Users:", totalUsers);
   console.log("== WORD OF THE DAY ==");
-
   console.log("WOTD (unglorpified):", unglorpified);
   console.log("WOTD (glorpified):", glorpified);
-  console.log("====================");
-  console.log("\n");
+  console.log("====================\n");
 });
 
 function extractStrings(option) {
@@ -172,6 +169,17 @@ function extractStrings(option) {
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
+  const command = client.commands.get(interaction.commandName);
+  if (!command) return;
+
+  // =========================
+  // 🚫 BYPASS FILTER FOR MODERATION COMMAND
+  // =========================
+  const isModeration = interaction.commandName === "moderation";
+
+  // =========================
+  // USER BLACKLIST (still applies everywhere)
+  // =========================
   if (
     interaction.guildId &&
     isUserBlacklisted(interaction.guildId, interaction.user.id)
@@ -182,53 +190,57 @@ client.on(Events.InteractionCreate, async (interaction) => {
     });
   }
 
-  const strings = [
-    interaction.commandName,
-    ...(interaction.options?.data
-      ? interaction.options.data.flatMap(extractStrings)
-      : []),
-  ];
+  // =========================
+  // SKIP FILTERS FOR MODERATION
+  // =========================
+  if (!isModeration) {
+    const strings = [
+      interaction.commandName,
+      ...(interaction.options?.data
+        ? interaction.options.data.flatMap(extractStrings)
+        : []),
+    ];
 
-  for (const str of strings) {
-    if (!str) continue;
+    for (const str of strings) {
+      if (!str) continue;
 
-    if (containsInvite(str)) {
-      await sendOwnerBlacklistAlert(client, interaction, {
-        word: "discord-invite",
-        scope: "invite",
-      });
+      if (containsInvite(str)) {
+        await sendOwnerBlacklistAlert(client, interaction, {
+          word: "discord-invite",
+          scope: "invite",
+        });
 
-      return interaction.reply({
-        content:
-          "<:GlorpNerd:1269929450712203264> Discord invites are not allowed.",
-        flags: MessageFlags.Ephemeral,
-      });
-    }
+        return interaction.reply({
+          content:
+            "<:GlorpNerd:1269929450712203264> Discord invites are not allowed.",
+          flags: MessageFlags.Ephemeral,
+        });
+      }
 
-    const result = isWordBlacklisted(interaction.guildId, str);
+      const result = isWordBlacklisted(interaction.guildId, str);
 
-    if (result.blocked) {
-      await sendOwnerBlacklistAlert(client, interaction, result);
+      if (result.blocked) {
+        await sendOwnerBlacklistAlert(client, interaction, result);
 
-      return interaction.reply({
-        content: `<:GlorpNerd:1269929450712203264> Blocked: \`${result.word}\` (${result.scope})`,
-        flags: MessageFlags.Ephemeral,
-      });
+        return interaction.reply({
+          content: `<:GlorpNerd:1269929450712203264> Blocked: \`${result.word}\` (${result.scope})`,
+          flags: MessageFlags.Ephemeral,
+        });
+      }
     }
   }
-
-  const command = client.commands.get(interaction.commandName);
-  if (!command) return;
 
   try {
     await command.execute(interaction);
   } catch (err) {
     console.error(err);
 
-    await interaction.reply({
-      content: "<:GlorpNerd:1269929450712203264> Error occurred.",
-      flags: MessageFlags.Ephemeral,
-    });
+    if (!interaction.replied) {
+      await interaction.reply({
+        content: "<:GlorpNerd:1269929450712203264> Error occurred.",
+        flags: MessageFlags.Ephemeral,
+      });
+    }
   }
 });
 
