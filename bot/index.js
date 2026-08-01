@@ -27,24 +27,25 @@ const client = new Client({
 
 client.commands = new Collection();
 
-const BOT_OWNER_ID = "201339719584317440";
+const ALERT_CHANNEL_ID = "1498991452946956318";
 const BETA_ALERTS = true;
 const startTime = Date.now();
 
 async function sendOwnerBlacklistAlert(client, interaction, result) {
   if (!BETA_ALERTS) return;
   try {
-    const owner = await client.users.fetch(BOT_OWNER_ID);
-    const dm = await owner.createDM();
-    await dm.send(
+    const channel = await client.channels.fetch(ALERT_CHANNEL_ID);
+    if (!channel || !channel.isTextBased()) return;
+
+    await channel.send(
       `🚨 Blacklist Trigger\n` +
         `User: ${interaction.user.tag} (${interaction.user.id})\n` +
-        `Guild: ${interaction.guild?.name} (${interaction.guildId})\n` +
+        `Guild: ${interaction.guild?.name || "Unknown Guild"} (${interaction.guildId})\n` +
         `Word: ${result.word}\n` +
         `Scope: ${result.scope}`,
     );
   } catch (err) {
-    console.error(err);
+    console.error("Failed to send blacklist alert:", err);
   }
 }
 
