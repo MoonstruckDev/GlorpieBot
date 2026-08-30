@@ -18,11 +18,7 @@ const {
 } = require("./startup/blacklist/blacklistService.js");
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-  ],
+  intents: [GatewayIntentBits.Guilds],
 });
 
 client.commands = new Collection();
